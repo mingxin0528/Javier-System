@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:th="https://www.thymeleaf.org" lang="en">
+<head th:replace="~{common/head :: common_header(~{::title})}">
+    <title>用户管理</title>
+    <style>
+        .m-autocomplete > li {
+            line-height: normal;
+            padding: 7px;
+        }
+    </style>
+</head>
+<body>
+<div id="app" style="display: flex;height: 100vh;flex-direction: column">
+    <el-header th:replace="~{common/header::header}"></el-header>
+    <el-container style="flex: 1">
+        <el-aside width="200px">
+            <div th:replace="~{common/nav :: common_nav('user')}"></div>
+        </el-aside>
+        <el-main>
+            <div style="display: flex;justify-content: flex-end">
+                <el-button @click="exportUserInfo" type="success" style="margin-right: 16px"><i
+                        class="el-icon-download"></i> 导出账户
+                </el-button>
+                <el-select v-model="selectedSymbols" clearable filterable placeholder="请选择交易对" style="flex:1">
+                    <el-option
+                            v-for="item in symbols"
+                            :key="item.type"
+                            :label="item.type"
+                            :value="item.type">
+                    </el-option>
+                </el-select>
+                <el-button @click="setSymbols" type="danger" style="margin-right: 16px"><i
+                        class="el-icon-set-up"></i> 设定交易对
+                </el-button>
+                <el-tooltip effect="dark" content="对所有正在运行的账户下单" placement="top">
+                    <el-button @click="openOrderDialog({})" type="primary"><i
+                            class="el-icon-thumb"></i> 开 单
+                    </el-button>
+                </el-tooltip>
+            </div>
+            <el-table
+                    id="dataTable"
+                    ref="ResTable"
+                    :data="tableData"
+                    border
+                    style="width: 100%">
+                <el-table-column type="expand">
+                    <template slot-scope="props">
+                        <template v-for="item in props.row.binanceList" v-key="item.id+''+item.userId">
+                            <el-tooltip effect="dark" :content="'可用余额:'+item.availableBalance.toFixed(8)"
+                                        placement="top">
+                                <el-tag size="medium" style="margin:16px">
+                                    <div><span style="font-weight: bold">{{item.asset}}: </span>{{
+                                        item.walletBalance.toFixed(8)
+                                        }}<span> [{{item.availableBalance.toFixed(8)}}]</span></div>
+                                </el-tag>
+                            </el-tooltip>
+                        </template>
+                    </template>
+                </el-table-column>
+                <el-table-column
+                        type="index"
+                        label="序号"
+                        width="80">
+                </el-table-column>
+                <el-table-column
+                        prop="username"
+                        label="用户名"
+                        :show-overflow-tooltip="true">
+                </el-table-column>
+                <el-table-column
+                        :show-overflow-tooltip="true"
+                        prop="apiKey"
+                        label="API KEY">
+                </el-table-column>
+                <el-table-column
+                        :show-overflow-tooltip="true"
+                        prop="secretKey"
+                        label="SECRET KEY">
+                </el-table-column>
+                <el-table-column
+                        :show-overflow-tooltip="true"
+                        prop="selfCode"
+                        label="推荐码">
+                </el-table-column>
+                <el-table-column
+                        :show-overflow-tooltip="true"
+                        prop="secret"
+                        label="秘钥">
+                </el-table-column>
+                <el-table-column
+                        label="状态"
+                        align="center"
+                        width="80">
+                    <template slot-scope="scope">
+                        <el-tag :type="scope.row.status?'success':'info'"
+                                v-text="scope.row.status?'正常':'已注销'"></el-tag>
+                    </template>
+                </el-table-column>
+                <el-table-column
+                        label="运行策略"
+                        align="center"
+                        width="80">
+                    <template slot-scope="scope">
+                        <el-tooltip :content="scope.row.allow?'已开启':'已停止'" placement="top">
+                            <el-switch
+                                    @change="onAllowChange(scope.row)"
+                                    v-model="scope.row.allow"
+                                    active-color="#13ce66"
+                                    inactive-color="#ff4949"
+                                    :active-value="1"
+                                    :inactive-value="0">
+                            </el-switch>
+                        </el-tooltip>
+                    </template>
+                </el-table-column>
+                <el-table-column
+                        fixed="right"
+                        label="操作"
+                        align="center"
+                        width="200">
+                    <template slot-scope="scope">
+                        <el-button @click="expandRow(scope.row)" type="text" size="small"
+                                   icon="el-icon-coin">余额
+                        </el-button>
+                        <el-button v-show="scope.row.status==1&&scope.row.allow==1" @click="openOrderDialog(scope.row)"
+                                   type="text" size="small"
+                                   style="color:red"
+                                   icon="el-icon-thumb">开单
+                        </el-button>
+                    </template>
+                </el-table-column>
+                </template>
+            </el-table>
+            <el-pagination
+                    @size-change="handleSizeChange"
+                    @current-change="handleCurrentChange"
+                    :current-page="queryVo.page"
+                    :page-sizes="[100, 300, 500, 1000, 3000]"
+                    :page-size="queryVo.size"
+                    layout="total, sizes, prev, pager, next, jumper"
+                    :total="queryVo.total">
+            </el-pagination>
+        </el-main>
+    </el-container>
+    <el-dialog :title="'开单'+(order.user?.username?('('+order.user.username+')'):'')"
+               :visible.sync="showNewOrderDialog">
+        <el-form :model="order" :rules="orderRules" ref="orderForm" label-width="120px">
+            <el-form-item label="持仓方向">
+                <el-radio-group v-model="order.positionSide">
+                    <el-radio label="LONG">多单</el-radio>
+                    <el-radio label="SHORT">空单</el-radio>
+                </el-radio-group>
+            </el-form-item>
+            <el-form-item label="挂单价格" prop="price">
+                <el-input v-model="order.price" type="number" autocomplete="off"></el-input>
+            </el-form-item>
+            <el-form-item label="止损价格" prop="stopLossPrice">
+                <el-input v-model="order.stopLossPrice" type="number" autocomplete="off"></el-input>
+            </el-form-item>
+            <el-form-item label="止盈价格" prop="stopEarnPrice">
+                <el-input v-model="order.stopEarnPrice" type="number" autocomplete="off"></el-input>
+            </el-form-item>
+            <el-form-item label="止损金额比" prop="stopLossRate">
+                <el-input v-model="order.stopLossRate" type="number" autocomplete="off"></el-input>
+            </el-form-item>
+        </el-form>
+        <div slot="footer" class="dialog-footer">
+            <el-button @click="showNewOrderDialog = false">取 消</el-button>
+            <el-button type="primary" @click="submitOrderForm('orderForm')">确 定</el-button>
+        </div>
+    </el-dialog>
+</div>
+<script>
+    new Vue({
+        el: '#app',
+        data() {
+            return {
+                loading: false,
+                showNewOrderDialog: false,
+                order: {
+                    price: '',
+                    stopLossPrice: '',
+                    stopEarnPrice: '',
+                    positionSide: 'LONG',
+                    stopLossRate: '0.01',
+                    user: {}
+                },
+                orderRules: {
+                    price: [{required: true, message: '请输入挂单价格', trigger: 'blur'}],
+                    stopLossPrice: [{required: true, message: '请输入止损价格', trigger: 'blur'}],
+                    stopEarnPrice: [{required: true, message: '请输入止盈价格', trigger: 'blur'}],
+                    stopLossRate: [{required: true, message: '请输入止损金额占余额的比例', trigger: 'blur'},
+                        {
+                            validator: (rule, value, callback) => {
+                                if (Number(value) > 1 || Number(value) <= 0) {
+                                    callback(new Error('止损金额比例在0-1之间(不包含0)'))
+                                } else {
+                                    callback()
+                                }
+                            }, trigger: 'blur'
+                        }],
+                },
+                tableData: [],
+                symbols: [],
+                selectedSymbols: '',
+                queryVo: {
+                    username: '',
+                    page: 1,
+                    size: 100,
+                    total: 0,
+                }
+            }
+        },
+        watch: {},
+        methods: {
+            loadTableData: function () {
+                this.loading = false;
+                this.$http.get('/hwer/user/getUserList', this.queryVo).then(res => {
+                    this.loading = true;
+                    if (res.code) {
+                        this.tableData = res.data.records;
+                        this.queryVo.page = res.data.current;
+                        this.queryVo.total = res.data.total;
+                    } else {
+                        this.$message.error(res.msg);
+                    }
+                })
+            },
+            addOrder: function () {
+                if (this.selectedSymbols.length) {
+                    localStorage.setItem(LS_SELECTED_SYMBOLS, JSON.stringify(this.selectedSymbols));
+                }
+            },
+            connect: function (row) {
+                this.$http.post('/hwer/user/connect', row).then(res => {
+                    this.$message.error(res.msg);
+                })
+            },
+            loadSymbols: function () {
+                this.$http.get('/hwer/symbol/list', {}).then(res => {
+                    if (res.code) {
+                        this.symbols = res.data;
+                        const ss = res.data.filter(e => e.activated === 1)
+                        if (ss.length > 0) {
+                            this.selectedSymbols = ss[0].type
+                        }
+                    } else {
+                        this.$message.error(res.msg);
+                    }
+                })
+            },
+            setSymbols: function () {
+                this.$http.post('/hwer/symbol/set', {symbols: this.selectedSymbols}).then(res => {
+                    this.$message({message: res.code ? '设置成功' : '设置失败', type: res.code ? 'success' : 'error'});
+                })
+            },
+            onAllowChange(row) {
+                this.$http.post('/hwer/user/updateAllow', row).then(res => {
+                    if (!res.code) {
+                        this.$message.error(res.msg);
+                        row.allow = 0;
+                    }
+                })
+            },
+            handleSizeChange(val) {
+                this.queryVo.size = val;
+                this.loadTableData()
+            },
+            handleCurrentChange(val) {
+                this.queryVo.page = val;
+                this.loadTableData()
+            },
+            expandRow(row) {
+                this.$refs['ResTable'].toggleRowExpansion(row)
+            },
+            onOrderStopTypeChange(val) {
+                if (val === 'TAKE_PROFIT_MARKET') {
+                    this.order.positionSide = 'LONG'
+                }
+            },
+            openOrderDialog(user = null) {
+                this.order = {
+                    price: '',
+                    stopLossPrice: '',
+                    stopEarnPrice: '',
+                    positionSide: 'LONG',
+                    stopLossRate: '0.01',
+                    user: {
+                        username: user.username,
+                        password: user.password,
+                        apiKey: user.apiKey,
+                        secretKey: user.secretKey
+                    } || {}
+                }
+                this.showNewOrderDialog = true
+            },
+            submitOrderForm(formName) {
+                console.log(formName)
+                this.$refs[formName].validate((valid) => {
+                    if (valid) {
+                        const stopEarnPriceN = Number(this.order.stopEarnPrice)
+                        const priceN = Number(this.order.price)
+                        const stopLossPriceN = Number(this.order.stopLossPrice)
+                        console.log(priceN, stopEarnPriceN, stopLossPriceN)
+                        if (this.order.positionSide === 'LONG') {
+                            if (priceN >= stopEarnPriceN || stopLossPriceN >= priceN) {
+                                this.$message.error('多单：止盈价格 > 挂单价格 > 止损价格')
+                                return
+                            }
+                        } else {
+                            if (priceN >= stopLossPriceN || stopEarnPriceN >= priceN) {
+                                this.$message.error('空单：止损价格 > 挂单价格 > 止盈价格')
+                                return
+                            }
+                        }
+                        this.$http.post({
+                            url: '/hwer/user/createOrder',
+                            contentType: 'application/json',
+                            data: JSON.stringify(this.order)
+                        }).then(res => {
+                            if (res.code) {
+                                if (res.data && res.data.length) {
+                                    res.data.forEach(e => this.$message.error(e))
+                                } else {
+                                    this.$message({message: "开单成功", type: 'success'})
+                                }
+                                this.showNewOrderDialog = false
+                            } else {
+                                this.$message.error('开单失败')
+                            }
+                        })
+                    } else {
+                        return false;
+                    }
+                });
+            },
+            resetOrderForm(formName) {
+                this.$refs[formName].resetFields();
+            },
+            exportUserInfo() {
+                const a = document.createElement('a');
+                a.download = 'accounts.zip';
+                a.href = '/hwer/user/exportUserInfo';
+                document.documentElement.appendChild(a);
+                a.click();
+                a.remove();
+            }
+        },
+        mounted() {
+            const s = localStorage.getItem(LS_SELECTED_SYMBOLS)
+            if (s) {
+                this.selectedSymbols = JSON.parse(s)
+            }
+            this.loadSymbols()
+            this.loadTableData()
+        }
+    })
+</script>
+</body>
+</html>

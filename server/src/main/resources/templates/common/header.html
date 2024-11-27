@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:th="https://www.thymeleaf.org" lang="en">
+<el-header style="padding:0" th:fragment="header">
+    <el-row type="flex" justify="space-between"
+            style="background: #3a8ee6;height:64px;padding:8px 16px;color: white">
+        <div th:text="哈维尔信息统计系统"
+             style="font-weight: bold;font-size: 2em">哈维尔信息统计系统
+        </div>
+        <div style="display: flex;align-items: center">
+            <el-tooltip effect="dark" content="注销" placement="top-start">
+                <i class="el-icon-switch-button"
+                   style="margin-left: 16px;color: #F56C6C; cursor: pointer;font-weight: bold"
+                   onclick="location.href='/hwer/logout'"></i>
+            </el-tooltip>
+        </div>
+    </el-row>
+</el-header>

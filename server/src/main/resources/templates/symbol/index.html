@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:th="https://www.thymeleaf.org" lang="en">
+<head th:replace="~{common/head :: common_header(~{::title})}">
+    <title>交易对管理</title>
+    <style>
+        .m-autocomplete > li {
+            line-height: normal;
+            padding: 7px;
+        }
+    </style>
+</head>
+<body>
+<div id="app" style="display: flex;height: 100vh;flex-direction: column">
+    <el-header th:replace="~{common/header::header}"></el-header>
+    <el-container style="flex: 1">
+        <el-aside width="200px">
+            <div th:replace="~{common/nav :: common_nav('symbol')}"></div>
+        </el-aside>
+        <el-main>
+            <div style="display: flex;justify-content: flex-end">
+                <el-button @click="addSymbol" type="primary"><i class="el-icon-circle-plus-outline"></i>添加</el-button>
+            </div>
+            <el-table
+                    id="symbolTable"
+                    ref="symbolTable"
+                    :data="tableData"
+                    border
+                    height="600px"
+                    style="width: 100%">
+                <el-table-column
+                        fixed
+                        type="index"
+                        label="序号"
+                        width="80">
+                </el-table-column>
+                <el-table-column
+                        prop="type"
+                        label="交易对"
+                        :show-overflow-tooltip="true">
+                </el-table-column>
+                <el-table-column
+                        fixed="right"
+                        label="操作"
+                        align="center"
+                        width="160">
+                    <template slot-scope="scope">
+                        <el-button @click="deleteThisOne(scope.index,scope.row)" type="text" size="small"
+                                   icon="el-icon-delete" style="color: #dd6161">删除
+                        </el-button>
+                    </template>
+                </el-table-column>
+                </template>
+            </el-table>
+            <el-pagination
+                    @size-change="handleSizeChange"
+                    @current-change="handleCurrentChange"
+                    :current-page="queryVo.page"
+                    :page-sizes="[100, 200, 300, 400, 500]"
+                    :page-size="queryVo.size"
+                    layout="total, sizes, prev, pager, next, jumper"
+                    :total="queryVo.total">
+            </el-pagination>
+        </el-main>
+    </el-container>
+    <el-dialog title="添加交易对" :visible.sync="showDialog">
+        <el-input v-model="symbol.type">
+        </el-input>
+        <div slot="footer" class="dialog-footer">
+            <el-button @click="showDialog = false">关 闭</el-button>
+            <el-button @click="confirmAdd" type="primary">添 加</el-button>
+        </div>
+    </el-dialog>
+</div>
+<script>
+    new Vue({
+        el: '#app',
+        data() {
+            return {
+                loading: false,
+                tableData: [],
+                queryVo: {
+                    username: '',
+                    page: 1,
+                    size: 100,
+                    total: 0,
+                },
+                symbol: {
+                    type: ''
+                },
+                showDialog: false
+            }
+        },
+        watch: {},
+        methods: {
+            loadTableData: function () {
+                this.loading = true;
+                this.$http.get('/hwer/symbol/page', this.queryVo).then(res => {
+                    this.loading = false;
+                    if (res.code) {
+                        this.tableData = res.data.records;
+                    } else {
+                        this.$message.error(res.msg);
+                    }
+                })
+            },
+            handleSizeChange(val) {
+                this.queryVo.size = val;
+                this.loadTableData()
+            },
+            handleCurrentChange(val) {
+                this.queryVo.page = val;
+                this.loadTableData()
+            },
+            addSymbol: function () {
+                this.symbol = {type: ''};
+                this.showDialog = true;
+            },
+            confirmAdd() {
+                if (!this.symbol.type || !this.symbol.type.trim().length) {
+                    this.$message.error('交易对不能为空');
+                    return;
+                }
+                this.$http.post('/hwer/symbol/add', this.symbol).then(res => {
+                    this.$message({message: res.code ? '添加成功' : '添加失败', type: res.code ? 'success' : 'error'});
+                    this.loadTableData()
+                    this.showDialog = false;
+                })
+            },
+            deleteThisOne(index, row) {
+                this.$confirm(`是否确认删除${row.type}？该操作不可恢复`, '警告', {
+                    confirmButtonText: '确定',
+                    cancelButtonText: '取消',
+                    type: 'error'
+                }).then(() => {
+                    this.$http.post('/hwer/symbol/remove', row).then(res => {
+                        if (res.code) {
+                            this.tableData.splice(index, 1);
+                            if (this.currentConn === row.name) {
+                                this.currentConn = '';
+                            }
+                        } else {
+                            this.$message.error(res.msg);
+                        }
+                    })
+                }).then()
+            }
+        },
+        mounted() {
+            this.loadTableData()
+        }
+    })
+</script>
+</body>
+</html>

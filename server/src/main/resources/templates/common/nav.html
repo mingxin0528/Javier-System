@@ -1,0 +1,10 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:th="https://www.thymeleaf.org" lang="en">
+<nav th:fragment="common_nav(cur_nav)" class="nav">
+    <div onclick="location.href='/hwer/user/index'" th:classappend="${cur_nav=='user'}?'active'">
+        用户管理
+    </div>
+    <div onclick="location.href='/hwer/symbol/index'" th:classappend="${cur_nav=='symbol'}?'active'">
+        交易对管理
+    </div>
+</nav>

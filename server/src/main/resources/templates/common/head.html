@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:th="https://www.thymeleaf.org" lang="en">
+<head th:fragment="common_header(title)">
+    <meta charset="UTF-8">
+    <link rel="icon" th:href="@{/static/img/favicon.ico}" type="image/x-icon"/>
+    <link rel="bookmark" th:href="@{/static/img/favicon.ico}" type="image/x-icon"/>
+    <title th:replace="${title}">FDC</title>
+    <style>
+        html, body {
+            padding: 0;
+            margin: 0;
+        }
+        .active {
+            color: #3a8ee6;
+            font-weight: bold;
+            background-color: #e6f1fe;
+        }
+
+        .nav {
+            color: #e6f1fe;
+            font-size: 1.2em;
+            background-color: #3a8ee6;
+            height: 100%;
+            overflow: hidden;
+        }
+        .nav>div{
+            cursor: pointer;
+            margin: 4px 0;
+            padding: 8px 16px;
+        }
+    </style>
+    <link rel="stylesheet" th:href="@{/static/css/index.css}"/>
+    <script th:src="@{/static/js/jquery.min.js}"></script>
+    <script th:src="@{/static/js/vue.js}"></script>
+    <script th:src="@{/static/js/index.js}"></script>
+    <script th:src="@{/static/js/xlsx.full.min.js}"></script>
+    <script th:src="@{/static/js/FileSaver.min.js}"></script>
+    <script th:src="@{/static/js/index.js}"></script>
+    <script th:src="@{/static/js/constant.js}"></script>
+    <script>
+        Vue.prototype.$http = jQuery
+    </script>
+</head>
+</html>

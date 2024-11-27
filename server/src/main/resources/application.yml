@@ -1,0 +1,41 @@
+server:
+  port: 9045
+  servlet:
+    context-path: /hwer
+spring:
+  session:
+    jdbc:
+      initialize-schema: always
+  thymeleaf:
+    cache: false
+  mvc:
+    static-path-pattern: /hwer/static/**
+  application:
+    name: hwer
+  datasource:
+    url: jdbc:mysql:///db_hwer
+    username: testuser
+    password: 123456
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+hwer:
+  config:
+    file-dir: 'E:/Temp/hwer-admin/files'
+    proxy:
+      enabled: false
+      ip: '127.0.0.1'
+      port: '1082'
+      user: ''
+      auth: ''
+#      ip: 'proxy.ipmart.io'
+#      port: '1000'
+#      user: '9Kf9Qv6Uy1Cn-res-any'
+#      auth: '3Xa3Tb2Js1Or8To9Dt'
+    api:
+      base-urls:
+        - https://api.binance.com
+        - https://api-gcp.binance.com
+        - https://api1.binance.com
+        - https://api2.binance.com
+        - https://api3.binance.com
+        - https://api4.binance.com

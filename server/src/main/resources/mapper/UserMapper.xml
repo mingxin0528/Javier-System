@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.hwer.admin.mapper.UserMapper">
+    <resultMap id="userParentMap" type="com.hwer.admin.entity.User">
+        <id property="id" column="id"/>
+        <result property="username" column="username"/>
+        <result property="password" column="password"/>
+        <result property="role" column="role"/>
+        <result property="secret" column="secret"/>
+        <result property="selfCode" column="self_code"/>
+        <result property="usedCode" column="used_code"/>
+        <result property="apiKey" column="api_key"/>
+        <result property="secretKey" column="secret_key"/>
+        <result property="allow" column="allow"/>
+        <result property="status" column="status"/>
+        <result property="createdTime" column="created_time"/>
+        <result property="token" column="token"/>
+        <result property="showSecret" column="show_secret"/>
+    </resultMap>
+    <resultMap id="userMap" type="com.hwer.admin.entity.User" extends="userParentMap">
+        <collection property="binanceList" column="id" ofType="com.hwer.admin.entity.Binance"
+                    select="getBinanceListByUserId"/>
+    </resultMap>
+    <resultMap id="binanceMap" type="com.hwer.admin.entity.Binance">
+        <id property="id" column="id"/>
+        <result property="userId" column="user_id"/>
+        <result property="asset" column="asset"/>
+        <result property="walletBalance" column="balance"/>
+        <result property="crossWalletBalance" column="cross_wallet_balance"/>
+        <result property="crossUnPnl" column="cross_un_pnl"/>
+        <result property="availableBalance" column="available_balance"/>
+        <result property="maxWithdrawAmount" column="max_withdraw_amount"/>
+        <result property="marginAvailable" column="margin_available"/>
+    </resultMap>
+    <sql id="userCols">
+        SELECT id,username,`password`,`role`,secret,self_code,used_code,api_key,secret_key,allow,status,created_time,token,show_secret from t_user
+    </sql>
+    <select id="getByUsername" resultMap="userMap">
+        <include refid="userCols"/>
+        WHERE status = 1 AND username = #{username}
+        ORDER BY status DESC
+    </select>
+
+    <select id="getAllowedUsers" resultMap="userMap">
+        <include refid="userCols"/>
+        WHERE status = 1 AND allow = 1 AND role = 0
+        ORDER BY status DESC
+    </select>
+
+    <select id="getBinanceListByUserId" resultMap="binanceMap">
+        SELECT id, user_id, asset, balance,cross_wallet_balance
+                 ,cross_un_pnl,available_balance,max_withdraw_amount,margin_available
+        FROM t_binance
+        WHERE user_id = #{id}
+    </select>
+    <select id="getPagedUserList" resultMap="userMap">
+        <include refid="userCols"/>
+        WHERE `role` = 0
+        <if test="vo.username != null">
+            AND username like concat('%',#{vo.username},'%')
+        </if>
+    </select>
+</mapper>

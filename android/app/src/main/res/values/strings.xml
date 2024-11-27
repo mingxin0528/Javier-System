@@ -1,0 +1,28 @@
+<resources>
+    <string name="app_name">hwer</string>
+    <string name="login">登录</string>
+    <string name="register">注册</string>
+    <string name="login_title">欢迎登录</string>
+    <string name="label_username">用户名</string>
+    <string name="label_password">密码</string>
+    <string name="label_password_confirm">确认密码</string>
+    <string name="label_recommend_code">推荐码(选填)</string>
+    <string name="label_api_key">API KEY</string>
+    <string name="label_secret_key">SECRETE KEY</string>
+    <string name="label_self_code">我的推荐码</string>
+    <string name="label_logout">退出登录</string>
+    <string name="label_allow_strategy">运行策略</string>
+    <string name="label_update">修改</string>
+    <string name="label_destroy_account">注销账号</string>
+    <string name="label_update_api_key">请输入新的 API KEY</string>
+    <string name="label_update_secrete_key">请输入新的 SECRET KEY</string>
+    <string name="confirm">确定</string>
+    <string name="cancel">取消</string>
+    <string name="label_binance">余额</string>
+    <string name="confirm_destroy_account">确认注销账号吗，该操作不可恢复</string>
+    <string name="warning">警告</string>
+    <string name="show_secret">查看我的秘钥</string>
+    <string name="show_secret_tip">秘钥只显示一次，请务必妥善保管</string>
+    <string name="copy">复制</string>
+    <string name="set_key">配置秘钥对</string>
+</resources>
